@@ -301,7 +301,7 @@ int main(int argc, char** argv) {
 
 🔎 참고자료
 1. Python과 C++ 간단하게 데이터를 주고받는 방법 2가지 – LCM을 통한 프로그램간 통신 : https://phd.korean-engineer.com/coding/python_cpp_lcm/
-## 🟤 실습7. wtw의 deploy코드와 가제보 시뮬레이션을 이용한 sim to sim환경 만들기
+## 🟤 실습7. wtw의 deploy코드와 가제보 시뮬레이션을 이용한 sim to sim 실습
 ```
 ## ModuleNotFoundError: No module named 'lcm'
 >> pip3 install lcm
@@ -317,12 +317,4 @@ CMake Error at /opt/ros/noetic/share/catkin/cmake/catkinConfig.cmake:83 (find_pa
 >> sudo apt update
 >> sudo apt install ros-noetic-geometry-msgs
 >> source /opt/ros/noetic/setup.bash 
-```
-go1_ws
-```
-## PinocchioInterface.hpp
->> urdf_file_ 수정
-
-## go1_controller_node.cpp
->>  go1_urdf_path_ 수정
 ```
