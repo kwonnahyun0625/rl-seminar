@@ -310,7 +310,13 @@ int main(int argc, char** argv) {
 ## ModuleNotFoundError: No module named 'cv2'
 >> python3 -m pip install opencv-python
 
-
+## Errors     << go1_controller:cmake /home/kwon/1225/go1_ws/logs/go1_controller/build.cmake.000.log   
+CMake Error at /opt/ros/noetic/share/catkin/cmake/catkinConfig.cmake:83 (find_package):
+  Could not find a package configuration file provided by "geometry_msgs"
+  with any of the following names:
+>> sudo apt update
+>> sudo apt install ros-noetic-geometry-msgs
+>> source /opt/ros/noetic/setup.bash 
 ```
 go1_ws
 ```
