@@ -108,5 +108,111 @@
     >> pip3 install torch torchvision torchaudio -f https://download.pytorch.org/whl/cu123/torch_stable.html
 ```
 ## 🔵 실습5. legged gym학습 환경에 adaptation module 추가해서 속도 추정기 만들기
+#### 1️⃣ legged_gym 수정
+◾ legged_robot.py
+```p
+## def compute_observations 
+self.obs_buf = torch.cat((  #self.base_lin_vel * self.obs_scales.lin_vel,
+                            #self.base_ang_vel  * self.obs_scales.ang_vel,
+                            self.projected_gravity,
+                            self.commands[:, :3] * self.commands_scale,
+                            (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,
+                            self.dof_vel * self.obs_scales.dof_vel,
+                            self.actions
+                            ),dim=-1)
+##############################################################################
+self.privileged_obs_buf = torch.empty(self.num_envs, 0).to(self.device)
+self.privileged_obs_buf = torch.cat((self.obs_buf,
+                                     self.base_lin_vel * self.obs_scales.lin_vel,
+                                     self.base_ang_vel  * self.obs_scales.ang_vel ),dim=-1)
+
+## def _get_noise_scale_vec
+noise_vec[0:3] = noise_scales.gravity * noise_level
+noise_vec[3:6] = 0. # commands
+noise_vec[6:18] = noise_scales.dof_pos * noise_level * self.obs_scales.dof_pos
+noise_vec[18:30] = noise_scales.dof_vel * noise_level * self.obs_scales.dof_vel
+noise_vec[30:42] = 0. # previous actions
+``` 
+
+◾ anymal_c_flat_config.py
+```p
+## class env( AnymalCRoughCfg.env ):
+num_observations = 42
+num_privileged_obs = 48
+```
+#### 2️⃣ rsl_rl 수정
+◾ actor_critic.py
+```p
+## def __init__
+# Adaptation module
+adaptation_module_branch_hidden_dims = [256, 128]
+num_latent = 6
+mlp_input_dim_a = num_actor_obs + num_latent
+
+adaptation_module_layers = []
+adaptation_module_layers.append(nn.Linear(num_actor_obs, adaptation_module_branch_hidden_dims[0]))
+adaptation_module_layers.append(activation)
+for l in range(len(adaptation_module_branch_hidden_dims)):
+    if l == len(adaptation_module_branch_hidden_dims) - 1:
+        adaptation_module_layers.append(
+            nn.Linear(adaptation_module_branch_hidden_dims[l], num_latent))
+    else:
+        adaptation_module_layers.append(
+            nn.Linear(adaptation_module_branch_hidden_dims[l],
+                      adaptation_module_branch_hidden_dims[l + 1]))
+        adaptation_module_layers.append(activation)
+self.adaptation_module = nn.Sequential(*adaptation_module_layers)
+print(f"Adaptation Module: {self.adaptation_module}")
+
+## def update_distribution
+latent = self.adaptation_module(observations)
+mean = self.actor(torch.cat((observations, latent), dim=-1))
+
+## def act_inference
+latent = self.adaptation_module(observations)
+actions_mean = self.actor(torch.cat((observations, latent), dim=-1))
+
+```
+
+◾ ppo.py
+```p
+## def __init__
+self.adaptation_module_optimizer = optim.Adam(self.actor_critic.parameters(), lr=learning_rate)
+
+## def update
+mean_adaptation_module_loss = 0
+##############################################################################
+# Adaptation module gradient step
+adaptation_pred = self.actor_critic.adaptation_module(obs_batch)
+with torch.no_grad():
+    adaptation_target = critic_obs_batch[:, 42:48]
+selection_indices = torch.linspace(0, adaptation_pred.shape[1]-1, steps=adaptation_pred.shape[1], dtype=torch.long)
+adaptation_loss = F.mse_loss(adaptation_pred[:, selection_indices], adaptation_target[:, selection_indices])
+self.adaptation_module_optimizer.zero_grad()
+adaptation_loss.backward()
+self.adaptation_module_optimizer.step()
+mean_adaptation_module_loss += adaptation_loss.item()
+##############################################################################
+import torch.nn.functional as F
+##############################################################################
+mean_adaptation_module_loss /= num_updates
+##############################################################################
+return mean_value_loss, mean_surrogate_loss, mean_adaptation_module_loss
+
+```
+
+◾ on_policy_runner.py
+```p
+## def learn
+mean_value_loss, mean_surrogate_loss, mean_adaptation_module_loss = self.alg.update()
+
+##
+self.writer.add_scalar('Loss/adaptation_module', locs['mean_adaptation_module_loss'], locs['it'])
+##############################################################################
+f"""{'adaptation_module loss:':>{pad}} {locs['mean_adaptation_module_loss']:.4f}\n"""
+##############################################################################
+f"""{'adaptation_module loss:':>{pad}} {locs['mean_adaptation_module_loss']:.4f}\n""" 
+```
+
 ## 🟣 실습6. 학습 모델의 sim to real(sim)을 위한 lcm 실습
 ## 🟤 실습7. wtw의 deploy코드와 가제보 시뮬레이션을 이용한 sim to sim환경 만들기
