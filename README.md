@@ -1,8 +1,8 @@
 # rl-seminar
 ## 📃 사전 준비
 1. Anaconda 설치
-2. git 설치
-3. 실습 자료 컴퓨터에 다운 
+2. git 설치 
+3. 실습 자료 컴퓨터에 다운 + https://github.com/kwonnahyun0625/go1_ws 레포 다운
 
 ## ✨ 목표 ✨
 심층 강화학습 기반 사족 보행 로봇 제어의 경험을 쌓고, Isaac gym을 이용한 강화학습 프레임워크와 친해지기 😀
