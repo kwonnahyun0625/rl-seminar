@@ -1,5 +1,8 @@
 # rl-seminar
 ## 📃 사전 준비
+1. Anaconda 설치
+2. git 설치
+3. 실습 자료 컴퓨터에 다운 
 
 ## ✨ 목표 ✨
 심층 강화학습 기반 사족 보행 로봇 제어의 경험을 쌓고, Isaac gym을 이용한 강화학습 프레임워크와 친해지기 😀
@@ -215,4 +218,87 @@ f"""{'adaptation_module loss:':>{pad}} {locs['mean_adaptation_module_loss']:.4f}
 ```
 
 ## 🟣 실습6. 학습 모델의 sim to real(sim)을 위한 lcm 실습
+📌 lcm 패키지 설치
+```
+>> sudo apt-get install liblcm-dev
+
+>> pip3 install lcm
+
+>> git clone https://github.com/lcm-proj/lcm.git
+>> cd lcm
+>> mkdir build
+>> cd build
+>> cmake ..
+>> make
+>> sudo make install
+```
+📌 데이터타입 오브젝트 생성
+```
+# For Python
+>> lcm-gen -p test.lcm
+
+# For C++
+>> lcm-gen -x test.lcm 
+```
+✏️ server.py
+```
+import lcm
+from test_lcm_type import test_t
+import time
+
+def main():
+    lc = lcm.LCM()
+    msg = test_t()
+    msg.timestamp = int(time.time() * 1e6)
+    msg.d = 11.2
+    msg.str = "hi"
+
+    while True:
+        lc.publish("EXAMPLE_CHANNEL", msg.encode())
+        time.sleep(1)
+
+if __name__ == "__main__":
+    main()
+```
+✏️ client.cpp
+```
+#include <lcm/lcm-cpp.hpp>
+#include "test_lcm_type/test_t.hpp"
+#include <iostream>
+
+class Handler {
+public:
+    void handleMessage(const lcm::ReceiveBuffer* rbuf,
+                       const std::string& chan, 
+                       const example_lcm_type::test_t* msg) {
+        std::cout << "Received message on channel " << chan << std::endl;
+        std::cout << "  timestamp = " << msg->timestamp << std::endl;
+        std::cout << "  d      = " << msg->d << std::endl;
+        std::cout << "  str      = " << msg->str << std::endl;
+    }
+};
+
+int main(int argc, char** argv) {
+    lcm::LCM lcm;
+    if (!lcm.good()) return 1;
+    Handler handlerObject;
+    lcm.subscribe("EXAMPLE_CHANNEL", &Handler::handleMessage, &handlerObject);
+
+    while (0 == lcm.handle());
+    return 0;
+}
+```
+```
+## cpp파일 컴파일
+>> g++ -o cpp_lcm_client client.cpp -llcm
+
+## python 서버 실행
+>> python server.py
+
+## cpp 클라이언트 실행
+>> ./cpp_lcm_client 
+```
+
+🔎 참고자료
+1. Python과 C++ 간단하게 데이터를 주고받는 방법 2가지 – LCM을 통한 프로그램간 통신 : https://phd.korean-engineer.com/coding/python_cpp_lcm/
 ## 🟤 실습7. wtw의 deploy코드와 가제보 시뮬레이션을 이용한 sim to sim환경 만들기
