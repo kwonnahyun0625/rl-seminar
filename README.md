@@ -110,7 +110,7 @@
 ## 🔵 실습5. legged gym학습 환경에 adaptation module 추가해서 속도 추정기 만들기
 #### 1️⃣ legged_gym 수정
 ◾ legged_robot.py
-```p
+```python
 ## def compute_observations 
 self.obs_buf = torch.cat((  #self.base_lin_vel * self.obs_scales.lin_vel,
                             #self.base_ang_vel  * self.obs_scales.ang_vel,
@@ -135,14 +135,14 @@ noise_vec[30:42] = 0. # previous actions
 ``` 
 
 ◾ anymal_c_flat_config.py
-```p
+```python
 ## class env( AnymalCRoughCfg.env ):
 num_observations = 42
 num_privileged_obs = 48
 ```
 #### 2️⃣ rsl_rl 수정
 ◾ actor_critic.py
-```p
+```python
 ## def __init__
 # Adaptation module
 adaptation_module_branch_hidden_dims = [256, 128]
@@ -175,7 +175,7 @@ actions_mean = self.actor(torch.cat((observations, latent), dim=-1))
 ```
 
 ◾ ppo.py
-```p
+```python
 ## def __init__
 self.adaptation_module_optimizer = optim.Adam(self.actor_critic.parameters(), lr=learning_rate)
 
@@ -202,11 +202,11 @@ return mean_value_loss, mean_surrogate_loss, mean_adaptation_module_loss
 ```
 
 ◾ on_policy_runner.py
-```p
+```python
 ## def learn
 mean_value_loss, mean_surrogate_loss, mean_adaptation_module_loss = self.alg.update()
 
-##
+## def log
 self.writer.add_scalar('Loss/adaptation_module', locs['mean_adaptation_module_loss'], locs['it'])
 ##############################################################################
 f"""{'adaptation_module loss:':>{pad}} {locs['mean_adaptation_module_loss']:.4f}\n"""
