@@ -1,4 +1,6 @@
 # rl-seminar
+Humanoid Robot Research Lab[HRRLAB]'s 2024 Winter Semester Seminar Practice Materials
+
 ## 📃 사전 준비
 1. Anaconda 설치
 2. git 설치 
